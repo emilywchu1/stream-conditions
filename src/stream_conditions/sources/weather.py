@@ -1,112 +1,215 @@
-"""Open-Meteo weather client — forecast and historical archive, no API key required."""
+"""Open-Meteo weather client — current conditions, forecast, and historical archive."""
 
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass, field
-from datetime import datetime, timedelta, timezone
+from dataclasses import dataclass
+from datetime import date, datetime, timezone
 from typing import Any
 
 import httpx
+from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential
 
 logger = logging.getLogger(__name__)
 
 FORECAST_URL = "https://api.open-meteo.com/v1/forecast"
 ARCHIVE_URL = "https://archive-api.open-meteo.com/v1/archive"
 
-_HOURLY_VARS = "temperature_2m,precipitation,windspeed_10m,cloudcover"
+_WEATHER_VARS = ",".join([
+    "temperature_2m",
+    "relative_humidity_2m",
+    "surface_pressure",
+    "cloud_cover",
+    "precipitation",
+    "wind_speed_10m",
+    "wind_direction_10m",
+])
 
 
 @dataclass
 class WeatherReading:
-    """Hourly weather observation or forecast at a gauge location."""
+    """Instantaneous current weather conditions at a location."""
 
-    datetime_utc: datetime
+    latitude: float
+    longitude: float
+    timestamp: datetime          # UTC
     air_temp_c: float | None
-    precipitation_mm: float | None
-    wind_speed_ms: float | None
+    humidity_pct: float | None
+    pressure_hpa: float | None
     cloud_cover_pct: float | None
+    precipitation_mm: float | None
+    wind_speed_kmh: float | None
+    wind_direction_deg: float | None
 
 
 @dataclass
-class OpenMeteoClient:
-    """Client for Open-Meteo forecast and historical-archive APIs."""
+class HourlyForecast:
+    """One hour of forecast or historical weather data."""
 
-    timeout: float = 30.0
-    _http: httpx.AsyncClient = field(init=False, repr=False)
+    timestamp: datetime          # UTC
+    air_temp_c: float | None
+    humidity_pct: float | None
+    pressure_hpa: float | None
+    cloud_cover_pct: float | None
+    precipitation_mm: float | None
+    wind_speed_kmh: float | None
+    wind_direction_deg: float | None
 
-    def __post_init__(self) -> None:
-        self._http = httpx.AsyncClient(timeout=self.timeout)
 
-    async def fetch_forecast(
+def _is_5xx(exc: BaseException) -> bool:
+    return (
+        isinstance(exc, httpx.HTTPStatusError)
+        and exc.response.status_code >= 500
+    )
+
+
+class WeatherClient:
+    """Synchronous client for the Open-Meteo forecast and archive APIs."""
+
+    def __init__(self, timeout: float = 10.0) -> None:
+        self._http = httpx.Client(timeout=timeout, follow_redirects=True)
+
+    @retry(
+        retry=retry_if_exception(_is_5xx),
+        wait=wait_exponential(multiplier=1, min=1, max=10),
+        stop=stop_after_attempt(3),
+        reraise=True,
+    )
+    def _fetch(self, url: str, params: dict[str, Any]) -> dict[str, Any]:
+        logger.debug("Open-Meteo request url=%s params=%s", url, params)
+        response = self._http.get(url, params=params)
+        response.raise_for_status()
+        return response.json()  # type: ignore[no-any-return]
+
+    def get_current(self, latitude: float, longitude: float) -> WeatherReading:
+        """Return current weather conditions at (latitude, longitude)."""
+        params: dict[str, Any] = {
+            "latitude": latitude,
+            "longitude": longitude,
+            "current": _WEATHER_VARS,
+            "timezone": "UTC",
+        }
+        try:
+            payload = self._fetch(FORECAST_URL, params)
+        except Exception:
+            logger.warning(
+                "Failed to fetch current weather at (%.4f, %.4f)", latitude, longitude
+            )
+            raise
+        return _parse_current(payload)
+
+    def get_forecast(self, latitude: float, longitude: float) -> list[HourlyForecast]:
+        """Return hourly forecasts for the next 48 hours."""
+        params: dict[str, Any] = {
+            "latitude": latitude,
+            "longitude": longitude,
+            "hourly": _WEATHER_VARS,
+            "forecast_days": 2,
+            "timezone": "UTC",
+        }
+        try:
+            payload = self._fetch(FORECAST_URL, params)
+        except Exception:
+            logger.warning(
+                "Failed to fetch forecast at (%.4f, %.4f)", latitude, longitude
+            )
+            raise
+        return _parse_hourly(payload)
+
+    def get_historical(
         self,
         latitude: float,
         longitude: float,
-        days: int = 7,
-    ) -> list[WeatherReading]:
-        """Fetch hourly forecast data for *days* ahead."""
-        response = await self._http.get(
-            FORECAST_URL,
-            params={
-                "latitude": latitude,
-                "longitude": longitude,
-                "hourly": _HOURLY_VARS,
-                "forecast_days": days,
-                "timezone": "UTC",
-            },
-        )
-        response.raise_for_status()
-        return _parse_hourly(response.json())
+        start: date,
+        end: date,
+    ) -> list[HourlyForecast]:
+        """Return hourly weather from the archive API between start and end (inclusive)."""
+        params: dict[str, Any] = {
+            "latitude": latitude,
+            "longitude": longitude,
+            "hourly": _WEATHER_VARS,
+            "start_date": start.isoformat(),
+            "end_date": end.isoformat(),
+            "timezone": "UTC",
+        }
+        try:
+            payload = self._fetch(ARCHIVE_URL, params)
+        except Exception:
+            logger.warning(
+                "Failed to fetch historical weather at (%.4f, %.4f) (%s to %s)",
+                latitude, longitude, start, end,
+            )
+            raise
+        return _parse_hourly(payload)
 
-    async def fetch_historical(
-        self,
-        latitude: float,
-        longitude: float,
-        days: int = 30,
-    ) -> list[WeatherReading]:
-        """Fetch hourly historical weather for the past *days* days."""
-        end = datetime.now(timezone.utc).date()
-        start = end - timedelta(days=days)
-        response = await self._http.get(
-            ARCHIVE_URL,
-            params={
-                "latitude": latitude,
-                "longitude": longitude,
-                "hourly": _HOURLY_VARS,
-                "start_date": start.isoformat(),
-                "end_date": end.isoformat(),
-                "timezone": "UTC",
-            },
-        )
-        response.raise_for_status()
-        return _parse_hourly(response.json())
+    def close(self) -> None:
+        self._http.close()
 
-    async def aclose(self) -> None:
-        await self._http.aclose()
+    def __enter__(self) -> WeatherClient:
+        return self
+
+    def __exit__(self, *args: Any) -> None:
+        self.close()
 
 
-def _parse_hourly(payload: dict[str, Any]) -> list[WeatherReading]:
+def _to_float(value: Any) -> float | None:
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _parse_current(payload: dict[str, Any]) -> WeatherReading:
+    current: dict[str, Any] = payload.get("current", {})
+    # Open-Meteo returns naive timestamps when timezone=UTC
+    ts = datetime.fromisoformat(current["time"]).replace(tzinfo=timezone.utc)
+    return WeatherReading(
+        latitude=float(payload["latitude"]),
+        longitude=float(payload["longitude"]),
+        timestamp=ts,
+        air_temp_c=_to_float(current.get("temperature_2m")),
+        humidity_pct=_to_float(current.get("relative_humidity_2m")),
+        pressure_hpa=_to_float(current.get("surface_pressure")),
+        cloud_cover_pct=_to_float(current.get("cloud_cover")),
+        precipitation_mm=_to_float(current.get("precipitation")),
+        wind_speed_kmh=_to_float(current.get("wind_speed_10m")),
+        wind_direction_deg=_to_float(current.get("wind_direction_10m")),
+    )
+
+
+def _parse_hourly(payload: dict[str, Any]) -> list[HourlyForecast]:
     hourly: dict[str, Any] = payload.get("hourly", {})
     times: list[str] = hourly.get("time", [])
-    temps: list[float | None] = hourly.get("temperature_2m", [])
-    precip: list[float | None] = hourly.get("precipitation", [])
-    wind: list[float | None] = hourly.get("windspeed_10m", [])
-    cloud: list[float | None] = hourly.get("cloudcover", [])
+    n = len(times)
 
-    def _get(lst: list[float | None], i: int) -> float | None:
+    def col(key: str) -> list[Any]:
+        return hourly.get(key, [None] * n)
+
+    temps = col("temperature_2m")
+    humidity = col("relative_humidity_2m")
+    pressure = col("surface_pressure")
+    cloud = col("cloud_cover")
+    precip = col("precipitation")
+    wind_speed = col("wind_speed_10m")
+    wind_dir = col("wind_direction_10m")
+
+    result: list[HourlyForecast] = []
+    for i, t in enumerate(times):
         try:
-            v = lst[i]
-            return float(v) if v is not None else None
-        except (IndexError, TypeError, ValueError):
-            return None
-
-    return [
-        WeatherReading(
-            datetime_utc=datetime.fromisoformat(t),
-            air_temp_c=_get(temps, i),
-            precipitation_mm=_get(precip, i),
-            wind_speed_ms=_get(wind, i),
-            cloud_cover_pct=_get(cloud, i),
+            ts = datetime.fromisoformat(t).replace(tzinfo=timezone.utc)
+        except ValueError:
+            logger.warning("Unparseable datetime from Open-Meteo: %s", t)
+            continue
+        result.append(
+            HourlyForecast(
+                timestamp=ts,
+                air_temp_c=_to_float(temps[i] if i < len(temps) else None),
+                humidity_pct=_to_float(humidity[i] if i < len(humidity) else None),
+                pressure_hpa=_to_float(pressure[i] if i < len(pressure) else None),
+                cloud_cover_pct=_to_float(cloud[i] if i < len(cloud) else None),
+                precipitation_mm=_to_float(precip[i] if i < len(precip) else None),
+                wind_speed_kmh=_to_float(wind_speed[i] if i < len(wind_speed) else None),
+                wind_direction_deg=_to_float(wind_dir[i] if i < len(wind_dir) else None),
+            )
         )
-        for i, t in enumerate(times)
-    ]
+    return result

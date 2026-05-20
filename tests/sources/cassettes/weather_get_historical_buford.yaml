@@ -1,0 +1,51 @@
+interactions:
+- request:
+    body: ''
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Host:
+      - archive-api.open-meteo.com
+      User-Agent:
+      - python-httpx/0.28.1
+    method: GET
+    uri: https://archive-api.open-meteo.com/v1/archive?latitude=34.1606&longitude=-84.0744&hourly=temperature_2m%2Crelative_humidity_2m%2Csurface_pressure%2Ccloud_cover%2Cprecipitation%2Cwind_speed_10m%2Cwind_direction_10m&start_date=2024-04-01&end_date=2024-04-02&timezone=UTC
+  response:
+    body:
+      string: !!binary |
+        eJzEVsuO20YQ/BcCvo3l6Z7hPPaaQ04BcvBNEIi1NOslIokLPTawjf0nf4O/zF0zlCynbSQHAwHI
+        mma/psgiW/rUbe9P4+m8Kd2d8wty1vam207797PzdfILK95guvdlXw6SPe1P464Mu2N3x4vAnDzH
+        lEIOnLLpzqf1MD08HMtpOJb1tN9ImjUdSj5Oe+nY/f7H2+6bY7h/9+5Qnsfa+Bot2/I8exwJA9M9
+        TufD9sNw3o8n6fip1kv6eJxSsISGZfcEfudDGXgnoS+ffxP3oeAOn8vweN6Nm/H0oQVfSeh4Pjzc
+        r8vwdChHsdHu8c97Cay303kzrKfncphTJWU9Po2nC8vdTpx/j/vNcHwqZTOQRdO/dm8eL/7NKCXI
+        nmNfPncvl7v4xn/ZsWX/2spBb629s1bqb12kXaxdTru8dvXaFbQralfSrqxcpNmTZk+aPWn2pNmT
+        Zk+aPWn2pNmTZs+aPWv2rNnzP9mz1pG1jqx1ZK0jax1Z68haR9Y6staRtY6sdWStI2sdWevIWkfW
+        OrLWkbWOrHVkrSNrHVnryFpHnnVc6TmypLxgQ2kRAdZQXARDoYFc9osM8EbmVLUIVrpCRoVDbQ+Q
+        yyy1TNKUWQLspEKAAX62GGDRIKMsY6OMLtVKCCSwqlwiNp+tBIizVTlntLcAllpp3xv2gB57gLhc
+        OoBHSr/62cxcRmtCMCHiiGyiYDaJTerrEU22JsulM8lWv0Ua8r0Jrh5iZBN9LaQZkZlM9iaHevTV
+        9pe20kT2JdP3pifjs+mT6YN0Xv1ogi9zxJPIEY8bGG/w1t/QV3Q32HKET4RMOVn4BSUzkTxAIFUP
+        1xy+6Q+77R5qh1D74y2Bnyra6olXxOsDDDdIN8g3OenarZ9rG+JefLVdvQuuWNnGyj/UOxKEut/9
+        ui3Jygv1P5wBj/Vfs3KuSy/vU/4+kFbqV3lpFxL5pUBX+NWdf7qb/c9brvRfkCVhrgjIo2V8/Q5j
+        wTXLzxZhCFGzPCAg2V7L6mQjjDKHCjt3YUyiOtRCG4MWlp8D9QtBgcWLiHzMnNbXg5Nr3WjeATOn
+        RW3r4bBhuA7LDAgNZCxdRqRFILQBSqsf/9daMmOYYozKmHMYsVj9vOKUei9xj4EYZXXzKf4eoxFr
+        lhM5NNfilHyWaxKbwME120oPS22tPqkjsdm1/uwbnwsnts2HPJvk9LWeMm49rV5evgIAAP//AwCt
+        I4gu
+    headers:
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - deflate
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Wed, 20 May 2026 02:42:05 GMT
+      Transfer-Encoding:
+      - chunked
+    status:
+      code: 200
+      message: OK
+version: 1

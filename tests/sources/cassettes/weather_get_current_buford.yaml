@@ -1,0 +1,40 @@
+interactions:
+- request:
+    body: ''
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Host:
+      - api.open-meteo.com
+      User-Agent:
+      - python-httpx/0.28.1
+    method: GET
+    uri: https://api.open-meteo.com/v1/forecast?latitude=34.1606&longitude=-84.0744&current=temperature_2m%2Crelative_humidity_2m%2Csurface_pressure%2Ccloud_cover%2Cprecipitation%2Cwind_speed_10m%2Cwind_direction_10m&timezone=UTC
+  response:
+    body:
+      string: !!binary |
+        eJx0kUFuwjAQRe9iqbuQjp0QJWy76KpSF+ytkAxgNbYjx07VIu7EGThZxzTQFsou+v/Pn3nxjnW1
+        Vz60yBZZnvJ5XvKEddZsJnFW5ikUeQFFwjZo0FHcGq80Sj2wBaQcRJFVvCozyIQQBeWCb6Rdrwf0
+        csDGmjYGExaHPq2hUvb8smQ/gqxXK4ejOlVfXOxwnJSM0xEJa4JzaLwMRnmq3J0KKK8GWxbAaUYZ
+        j26sOxLPm2kN6j7eHRxKock6Hp5IdhjRR5TboFWr/Me3+UDWENy6blD2Dgf6jju2rzUZTWdDKxs7
+        opuiFGlUr/z5dq1JfFemlUOP2EoOsfRNP27PeqtoJKYn73hg+wvbLypBP3YG85mAJYhFBn/wKoBb
+        MCHS6h5XfJdbLHq1NLvCghsoSOO2a6gyzf8n4hz2+y8AAAD//wMAICfEOQ==
+    headers:
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - deflate
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Wed, 20 May 2026 02:42:04 GMT
+      Transfer-Encoding:
+      - chunked
+    status:
+      code: 200
+      message: OK
+version: 1

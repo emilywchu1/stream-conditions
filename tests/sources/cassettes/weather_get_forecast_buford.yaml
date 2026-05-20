@@ -1,0 +1,51 @@
+interactions:
+- request:
+    body: ''
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Host:
+      - api.open-meteo.com
+      User-Agent:
+      - python-httpx/0.28.1
+    method: GET
+    uri: https://api.open-meteo.com/v1/forecast?latitude=34.1606&longitude=-84.0744&hourly=temperature_2m%2Crelative_humidity_2m%2Csurface_pressure%2Ccloud_cover%2Cprecipitation%2Cwind_speed_10m%2Cwind_direction_10m&forecast_days=2&timezone=UTC
+  response:
+    body:
+      string: !!binary |
+        eJzcVstu21gM/RcBs2M0l/ele7PtoqsCXXRnGEJqK41Q2wr8SNEp8k/9hn7ZHFJ26gnbmf3AEUMd
+        kucemTTtb83m7jgeT+uhuQ2x5RQLU7OZdp/O4E2Jrcsxu0zNp2E37JE+7Y7jdui3h+bWtTH4WDk4
+        WOdDjNScjqt+ur8/DMf+MKym3VryqJGav6YdOJu37z40P4H+7uPH/fA0KvNLdNgMT2ckMDRQ8zCd
+        9puv/Wk3HsH4TeuRPh6mkh0L4bB9FIGn/dD7LUI/vr8BvB/kGZ+G/uG0Hdfj8esc/AOhw2l/f7ca
+        +sf9cIAvdA/v7xBYbabTul9NT8P+nIqU1fg4Hi8qt1uAX8bduj88DsO6Zyekn7d/Plzw9YgSyT7H
+        fnxvni9P8VP/ovHO5xuXbrz74Nytc6i/hthC3kLBQtFCyULZQp2FioWqgdiqZ6uerXq26tmqZ6ue
+        rXq26tmqZ6veW/XeqvdWvX+tnm0f2faRbR/Z9pFtH9n2kW0f2faRbR/Z9pFtH9n2kW0f2faRbR/Z
+        9pFtH9n2kW0f2faRbR/Z9pFtH/ncx6XdIwvftZV8bBP50EbyXjxuixhP3rWdGE9c4cFEMY64SBlL
+        RZCKJBWdJEsUJlNwwIKwwLDcXjAlLVKRZsOiwAtVEAVBmLOYJIdXY7ycEaRCa7PkFdFS5LZIQI5E
+        XhFmPUOT3fJ3O3MRE6VKOVIu1DnqEhVHJVLpqGS1haoTsGPKjpKnWCgGCpWio8hixY+UMmXkwFbq
+        AnVZ/zrqcFuU08ktojlQKpSisIEfh+JoqRKhdoMvapFO1RLwTGKd2kqCz/4c7WC9+vJuCsJX0fCS
+        E9WPZz9fIXN+fGFgPZHVd4pf7Ix4tXMOX2UmtdDWVY2q/wqpeopX272c6JXHaz6rNj6fUtXmKw0z
+        W16++nZbBEeXF8sV1MU064UXOohZjBQw187951Xzv2WW9I/bZDMwLpieVJfmS3eBh4C2/50JtfW/
+        jCztT4wFcqlDSzMa2uFKGB8ZVBnKDLzA10+yLBBZJxiRDF9WQdSr4D5rrvgskyGbSoiLJuPThv+c
+        wVgQzMooJyRlS1otTIJjuLS4qiI5MSmJV1LsHYbMrJLm4rj89Q+kBXscyhWKsEUdhs/N9xg9DCAW
+        CcYqSyhjSDFGGDTGlvAyNzXAl9WHh/ay2gRHeQRdEhzbD3vFY3cFf76AhZhnP8pGJyRja3kQBeyq
+        IIsLq0oL5aAKwop3DHwoxR4LyS+fn/8GAAD//wMASMB5Eg==
+    headers:
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - deflate
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Wed, 20 May 2026 02:42:04 GMT
+      Transfer-Encoding:
+      - chunked
+    status:
+      code: 200
+      message: OK
+version: 1

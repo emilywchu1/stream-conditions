@@ -4,101 +4,155 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timezone
 from typing import Any
 
 import httpx
+from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential
 
 logger = logging.getLogger(__name__)
 
 NWIS_IV_URL = "https://waterservices.usgs.gov/nwis/iv/"
 
-PARAM_DISCHARGE = "00060"   # Discharge, cubic feet per second
-PARAM_STAGE = "00065"        # Gage height, feet
-PARAM_WATER_TEMP = "00010"   # Water temperature, °C
+PARAM_DISCHARGE = "00060"     # Discharge, ft³/s
+PARAM_GAUGE_HEIGHT = "00065"  # Gage height, ft
+PARAM_WATER_TEMP = "00010"    # Water temperature, °C
 
+_KNOWN_PARAMS = {PARAM_DISCHARGE, PARAM_GAUGE_HEIGHT, PARAM_WATER_TEMP}
 _MISSING_SENTINEL = "-999999"
 
 
 @dataclass
-class GaugeReading:
+class USGSReading:
     """A single instantaneous reading from a USGS stream gauge."""
 
-    site_no: str
-    datetime_utc: datetime
+    site_id: str
+    timestamp: datetime          # UTC
     discharge_cfs: float | None
-    stage_ft: float | None
+    gauge_height_ft: float | None
     water_temp_c: float | None
+    raw: dict[str, Any] = field(default_factory=dict)
 
 
-@dataclass
+def _is_5xx(exc: BaseException) -> bool:
+    return (
+        isinstance(exc, httpx.HTTPStatusError)
+        and exc.response.status_code >= 500
+    )
+
+
 class USGSClient:
-    """Async client for the USGS NWIS Instantaneous Values REST service."""
+    """Synchronous client for the USGS NWIS Instantaneous Values REST service."""
 
-    timeout: float = 30.0
-    _http: httpx.AsyncClient = field(init=False, repr=False)
+    def __init__(self, timeout: float = 10.0) -> None:
+        self._http = httpx.Client(timeout=timeout, follow_redirects=True)
 
-    def __post_init__(self) -> None:
-        self._http = httpx.AsyncClient(timeout=self.timeout)
-
-    async def fetch_recent(
-        self,
-        site_no: str,
-        days: int = 7,
-        param_codes: list[str] | None = None,
-    ) -> list[GaugeReading]:
-        """Fetch instantaneous values for *site_no* over the past *days* days."""
-        if param_codes is None:
-            param_codes = [PARAM_DISCHARGE, PARAM_STAGE, PARAM_WATER_TEMP]
-
-        start = (datetime.now(timezone.utc) - timedelta(days=days)).strftime("%Y-%m-%d")
-        response = await self._http.get(
-            NWIS_IV_URL,
-            params={
-                "sites": site_no,
-                "parameterCd": ",".join(param_codes),
-                "startDT": start,
-                "format": "json",
-            },
-        )
+    @retry(
+        retry=retry_if_exception(_is_5xx),
+        wait=wait_exponential(multiplier=1, min=1, max=10),
+        stop=stop_after_attempt(3),
+        reraise=True,
+    )
+    def _fetch(self, params: dict[str, str]) -> dict[str, Any]:
+        logger.debug("USGS NWIS request params=%s", params)
+        response = self._http.get(NWIS_IV_URL, params=params)
         response.raise_for_status()
-        return self._parse(site_no, response.json())
+        return response.json()  # type: ignore[no-any-return]
 
-    def _parse(self, site_no: str, payload: dict[str, Any]) -> list[GaugeReading]:
-        """Flatten NWIS timeSeries JSON into GaugeReading objects."""
-        time_series: list[dict[str, Any]] = payload.get("value", {}).get("timeSeries", [])
+    def get_current(self, site_id: str) -> USGSReading:
+        """Return the most recent reading for *site_id*."""
+        params: dict[str, str] = {
+            "sites": site_id,
+            "parameterCd": ",".join([PARAM_DISCHARGE, PARAM_GAUGE_HEIGHT, PARAM_WATER_TEMP]),
+            "period": "PT2H",
+            "format": "json",
+        }
+        try:
+            payload = self._fetch(params)
+        except Exception:
+            logger.warning("Failed to fetch current data for site %s", site_id)
+            raise
+        readings = self._parse(site_id, payload)
+        if not readings:
+            raise ValueError(f"No data returned for site {site_id}")
+        return readings[-1]
 
-        # Accumulate values keyed by ISO datetime string so we can merge parameters.
-        by_dt: dict[str, dict[str, Any]] = {}
+    def get_historical(
+        self,
+        site_id: str,
+        start: date,
+        end: date,
+    ) -> list[USGSReading]:
+        """Return all readings for *site_id* between *start* and *end* (inclusive)."""
+        params: dict[str, str] = {
+            "sites": site_id,
+            "parameterCd": ",".join([PARAM_DISCHARGE, PARAM_GAUGE_HEIGHT, PARAM_WATER_TEMP]),
+            "startDT": start.isoformat(),
+            "endDT": end.isoformat(),
+            "format": "json",
+        }
+        try:
+            payload = self._fetch(params)
+        except Exception:
+            logger.warning(
+                "Failed to fetch historical data for site %s (%s to %s)",
+                site_id, start, end,
+            )
+            raise
+        return self._parse(site_id, payload)
+
+    def _parse(self, site_id: str, payload: dict[str, Any]) -> list[USGSReading]:
+        time_series: list[dict[str, Any]] = (
+            payload.get("value", {}).get("timeSeries", [])
+        )
+
+        by_dt: dict[str, dict[str, str | None]] = {}
         for series in time_series:
-            param = series["variable"]["variableCode"][0]["value"]
-            values: list[dict[str, Any]] = series.get("values", [{}])[0].get("value", [])
-            for entry in values:
+            try:
+                param: str = series["variable"]["variableCode"][0]["value"]
+            except (KeyError, IndexError):
+                logger.warning("Unexpected timeSeries structure; skipping entry")
+                continue
+            entries: list[dict[str, Any]] = (
+                series.get("values", [{}])[0].get("value", [])
+            )
+            for entry in entries:
                 dt_str: str = entry["dateTime"]
-                raw: str = entry["value"]
+                raw_val: str = entry["value"]
                 by_dt.setdefault(dt_str, {})
-                by_dt[dt_str][param] = None if raw == _MISSING_SENTINEL else raw
+                by_dt[dt_str][param] = (
+                    None if raw_val == _MISSING_SENTINEL else raw_val
+                )
 
-        readings: list[GaugeReading] = []
+        readings: list[USGSReading] = []
         for dt_str, params in sorted(by_dt.items()):
             try:
-                dt = datetime.fromisoformat(dt_str.replace("Z", "+00:00"))
+                dt = datetime.fromisoformat(dt_str).astimezone(timezone.utc)
             except ValueError:
                 logger.warning("Unparseable datetime from NWIS: %s", dt_str)
                 continue
+
+            extra = {k: v for k, v in params.items() if k not in _KNOWN_PARAMS}
             readings.append(
-                GaugeReading(
-                    site_no=site_no,
-                    datetime_utc=dt,
+                USGSReading(
+                    site_id=site_id,
+                    timestamp=dt,
                     discharge_cfs=_to_float(params.get(PARAM_DISCHARGE)),
-                    stage_ft=_to_float(params.get(PARAM_STAGE)),
+                    gauge_height_ft=_to_float(params.get(PARAM_GAUGE_HEIGHT)),
                     water_temp_c=_to_float(params.get(PARAM_WATER_TEMP)),
+                    raw=extra,
                 )
             )
         return readings
 
-    async def aclose(self) -> None:
-        await self._http.aclose()
+    def close(self) -> None:
+        self._http.close()
+
+    def __enter__(self) -> USGSClient:
+        return self
+
+    def __exit__(self, *args: Any) -> None:
+        self.close()
 
 
 def _to_float(value: Any) -> float | None:

@@ -1,0 +1,147 @@
+interactions:
+- request:
+    body: ''
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Host:
+      - waterservices.usgs.gov
+      User-Agent:
+      - python-httpx/0.28.1
+    method: GET
+    uri: https://waterservices.usgs.gov/nwis/iv/?sites=02334430&parameterCd=00060%2C00065%2C00010&startDT=2024-04-01&endDT=2024-04-01&format=json
+  response:
+    body:
+      string: ''
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Cache-Control:
+      - max-age=900
+      Connection:
+      - Keep-Alive
+      Content-Length:
+      - '0'
+      Date:
+      - Wed, 20 May 2026 02:37:41 GMT
+      Expires:
+      - Wed, 20 May 2026 02:52:41 GMT
+      Keep-Alive:
+      - timeout=5, max=100
+      Location:
+      - https://nwis.waterservices.usgs.gov/nwis/iv/?sites=02334430&parameterCd=00060%2C00065%2C00010&startDT=2024-04-01&endDT=2024-04-01&format=json
+      Server:
+      - Apache
+      Strict-Transport-Security:
+      - max-age=31536000
+      Vary:
+      - Accept-Encoding
+      X-Frame-Options:
+      - deny
+      X-UA-Compatible:
+      - IE=edge,chrome=1
+    status:
+      code: 301
+      message: ''
+- request:
+    body: ''
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Host:
+      - nwis.waterservices.usgs.gov
+      User-Agent:
+      - python-httpx/0.28.1
+    method: GET
+    uri: https://nwis.waterservices.usgs.gov/nwis/iv/?sites=02334430&parameterCd=00060%2C00065%2C00010&startDT=2024-04-01&endDT=2024-04-01&format=json
+  response:
+    body:
+      string: !!binary |
+        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
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Cache-Control:
+      - max-age=900
+      Connection:
+      - Keep-Alive
+      Content-Encoding:
+      - gzip
+      Content-Security-Policy:
+      - frame-ancestors 'self'
+      Content-Type:
+      - application/json
+      Date:
+      - Wed, 20 May 2026 02:37:42 GMT
+      Expires:
+      - Wed, 20 May 2026 02:52:42 GMT
+      Keep-Alive:
+      - timeout=15, max=100
+      Server:
+      - Apache
+      Strict-Transport-Security:
+      - max-age=31536000
+      Transfer-Encoding:
+      - chunked
+      Vary:
+      - Accept-Encoding
+      X-UA-Compatible:
+      - IE=edge,chrome=1
+    status:
+      code: 200
+      message: ''
+version: 1

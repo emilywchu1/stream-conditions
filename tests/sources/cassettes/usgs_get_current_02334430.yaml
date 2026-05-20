@@ -1,0 +1,77 @@
+interactions:
+- request:
+    body: ''
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Host:
+      - waterservices.usgs.gov
+      User-Agent:
+      - python-httpx/0.28.1
+    method: GET
+    uri: https://waterservices.usgs.gov/nwis/iv/?sites=02334430&parameterCd=00060%2C00065%2C00010&period=PT2H&format=json
+  response:
+    body:
+      string: !!binary |
+        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
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Cache-Control:
+      - max-age=900
+      Connection:
+      - Keep-Alive
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json
+      Date:
+      - Wed, 20 May 2026 02:36:51 GMT
+      Expires:
+      - Wed, 20 May 2026 02:51:52 GMT
+      Keep-Alive:
+      - timeout=5, max=100
+      Server:
+      - Apache
+      Strict-Transport-Security:
+      - max-age=31536000
+      Transfer-Encoding:
+      - chunked
+      Vary:
+      - Accept-Encoding
+      X-Frame-Options:
+      - deny
+      X-UA-Compatible:
+      - IE=edge,chrome=1
+    status:
+      code: 200
+      message: ''
+version: 1

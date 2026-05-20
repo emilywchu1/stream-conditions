@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Stream Conditions</title>
+  <script src="https://unpkg.com/htmx.org@1.9.12" crossorigin="anonymous"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 960px;
+      margin: 2rem auto;
+      padding: 0 1.25rem;
+      color: #1a1a1a;
+      background: #f8f8f6;
+    }
+    h1 { color: #2c5f2e; margin-bottom: 0.25rem; }
+    .subtitle { color: #555; margin-top: 0; }
+    .card {
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 1rem;
+    }
+    .card h2 { margin-top: 0; font-size: 1.1rem; }
+    .input-row { display: flex; gap: 0.5rem; align-items: center; }
+    input[type="text"] {
+      padding: 0.4rem 0.75rem;
+      border: 1px solid #bbb;
+      border-radius: 4px;
+      font-size: 1rem;
+      flex: 1;
+      max-width: 240px;
+    }
+    button {
+      padding: 0.4rem 1rem;
+      background: #2c5f2e;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.95rem;
+    }
+    button:hover { background: #3a7a3d; }
+    .htmx-indicator { display: none; }
+    .htmx-request .htmx-indicator { display: inline; }
+    em { color: #888; }
+  </style>
+</head>
+<body>
+  <h1>Stream Conditions</h1>
+  <p class="subtitle">Real-time hydrological data &amp; fly-fishing window prediction</p>
+
+  <div class="card">
+    <h2>Gauge Lookup</h2>
+    <div class="input-row">
+      <input
+        type="text"
+        id="gauge-id"
+        name="gauge_id"
+        placeholder="USGS site ID (e.g. 12345678)"
+        aria-label="USGS gauge site ID"
+      />
+      <button
+        hx-get="/gauge/conditions"
+        hx-include="#gauge-id"
+        hx-target="#conditions-panel"
+        hx-swap="innerHTML"
+        hx-indicator="#spinner"
+      >
+        Load Conditions
+      </button>
+      <span id="spinner" class="htmx-indicator">Loading…</span>
+    </div>
+  </div>
+
+  <div id="conditions-panel" class="card">
+    <em>Enter a gauge ID above to view stream conditions and predicted fishing windows.</em>
+  </div>
+</body>
+</html>

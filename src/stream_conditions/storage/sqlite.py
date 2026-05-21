@@ -149,7 +149,7 @@ class SnapshotSQLiteRepo:
 
     async def insert(self, snapshot: Snapshot) -> int:
         cur = await self._c.execute(
-            """INSERT INTO snapshots
+            """INSERT OR IGNORE INTO snapshots
                    (site_id, fetched_at, discharge_cfs, gauge_height_ft,
                     water_temp_c, air_temp_c, humidity_pct, pressure_hpa,
                     cloud_cover_pct, precip_mm, wind_speed_kmh, wind_dir_deg)
@@ -164,7 +164,8 @@ class SnapshotSQLiteRepo:
             ),
         )
         await self._c.commit()
-        return cur.lastrowid or 0
+        # rowcount == 0 means the unique index rejected a duplicate — caller gets 0.
+        return (cur.lastrowid or 0) if cur.rowcount else 0
 
     async def get_range(
         self, site_id: str, since: datetime, until: datetime

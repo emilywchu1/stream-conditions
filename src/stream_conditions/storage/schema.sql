@@ -34,6 +34,10 @@ CREATE TABLE IF NOT EXISTS snapshots (
 CREATE INDEX IF NOT EXISTS ix_snapshots_site_fetched
     ON snapshots (site_id, fetched_at);
 
+-- Unique index ensures INSERT OR IGNORE is idempotent across re-runs.
+CREATE UNIQUE INDEX IF NOT EXISTS ux_snapshots_site_fetched
+    ON snapshots (site_id, fetched_at);
+
 -- User-logged fishing sessions with optional hatch and catch data.
 CREATE TABLE IF NOT EXISTS sessions (
     id              INTEGER PRIMARY KEY AUTOINCREMENT,

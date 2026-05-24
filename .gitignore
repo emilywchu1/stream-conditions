@@ -29,9 +29,8 @@ ENV/
 # Data (SQLite file, raw downloads)
 data/
 
-# Jupyter notebook outputs (keep .ipynb structure, ignore checkpoints)
+# Jupyter checkpoints only — track notebook files themselves
 .ipynb_checkpoints/
-notebooks/**/*.ipynb
 
 # Type checking
 .mypy_cache/

@@ -105,7 +105,7 @@ def fetch(db: Path | None = _DB_OPTION) -> None:
 
     failed = [sid for sid, ok in results.items() if not ok]
     for sid, ok in results.items():
-        icon = "✓" if ok else "✗"
+        icon = "ok" if ok else "!!"
         typer.echo(f"  {icon} {sid}")
 
     if failed:
